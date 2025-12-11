@@ -1,0 +1,352 @@
+<div class="card">
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="text-2xl font-bold text-900 m-0">Sprint Management</h2>
+      <p class="text-600 mt-1 mb-0">Manage your project sprints and track progress</p>
+    </div>
+    <div class="flex gap-2">
+      <p-button 
+        icon="pi pi-arrow-left" 
+        label="Back" 
+        severity="secondary"
+        (onClick)="goBack()">
+      </p-button>
+      <p-button 
+        icon="pi pi-plus" 
+        label="Add Sprint" 
+        (onClick)="showAddDialog()">
+      </p-button>
+    </div>
+  </div>
+
+  <!-- Error Message Display -->
+  <div *ngIf="errorMessage" class="mb-4">
+    <p-message 
+      severity="error" 
+      [text]="errorMessage"
+      [closable]="true"
+      (onClose)="clearError()">
+    </p-message>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" class="flex justify-content-center align-items-center p-4">
+    <p-progressSpinner 
+      [style]="{'width': '50px', 'height': '50px'}" 
+      strokeWidth="4"
+      animationDuration="1s">
+    </p-progressSpinner>
+    <span class="ml-3 text-600">Loading sprints...</span>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="flex flex-wrap gap-3 mb-4 align-items-end" *ngIf="!loading">
+    <div class="flex-1 min-w-0">
+      <label for="searchTerm" class="block text-sm font-medium text-700 mb-1">Search Sprints</label>
+      <span class="p-input-icon-left w-full">
+        <i class="pi pi-search"></i>
+        <input 
+          pInputText 
+          id="searchTerm"
+          [(ngModel)]="searchTerm" 
+          (ngModelChange)="onSearchChange()"
+          placeholder="Search by sprint name..."
+          class="w-full">
+      </span>
+    </div>
+    
+    <div class="flex-none">
+      <label for="statusFilter" class="block text-sm font-medium text-700 mb-1">Filter by Status</label>
+      <p-dropdown 
+        [(ngModel)]="selectedStatusFilter"
+        (ngModelChange)="onStatusFilterChange()"
+        [options]="statusFilterOptions"
+        placeholder="All Statuses"
+        inputId="statusFilter"
+        [style]="{'min-width': '150px'}">
+      </p-dropdown>
+    </div>
+    
+    <div class="flex-none">
+      <label class="block text-sm font-medium text-700 mb-1">Active Only</label>
+      <p-inputSwitch 
+        [(ngModel)]="showActiveOnly"
+        (ngModelChange)="onActiveFilterChange()">
+      </p-inputSwitch>
+    </div>
+    
+    <div class="flex-none">
+      <p-button 
+        icon="pi pi-filter-slash" 
+        label="Clear Filters"
+        severity="secondary"
+        [text]="true"
+        (onClick)="clearFilters()">
+      </p-button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="flex flex-wrap gap-3 mb-4" *ngIf="!loading">
+    <div class="flex-1 min-w-0">
+      <div class="card bg-white border-1 border-200 shadow-1 p-3">
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex-1">
+            <div class="text-3xl font-bold text-900 mb-1">{{ sprints.length }}</div>
+            <div class="text-600 font-medium">Total Sprints</div>
+          </div>
+          <i class="pi pi-list text-green-500 text-2xl"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="card bg-white border-1 border-200 shadow-1 p-3">
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex-1">
+            <div class="text-600 font-medium mb-1">Planning</div>
+            <div class="text-2xl font-bold text-900">{{ getPlannedSprints().length }}</div>
+          </div>
+          <i class="pi pi-clock text-blue-400 text-2xl"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="card bg-white border-1 border-200 shadow-1 p-3">
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex-1">
+            <div class="text-600 font-medium mb-1">Active</div>
+            <div class="text-2xl font-bold text-900">{{ getActiveSprints().length }}</div>
+          </div>
+          <i class="pi pi-refresh text-teal-400 text-2xl"></i>
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="card bg-white border-1 border-200 shadow-1 p-3">
+        <div class="flex align-items-center justify-content-between">
+          <div class="flex-1">
+            <div class="text-600 font-medium mb-1">Completed</div>
+            <div class="text-2xl font-bold text-900">{{ getCompletedSprints().length }}</div>
+          </div>
+          <i class="pi pi-check-circle text-green-400 text-2xl"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Actions -->
+  <div class="flex justify-content-between align-items-center mb-3" *ngIf="!loading">
+    <div class="flex gap-2">
+      <p-button 
+        icon="pi pi-trash" 
+        label="Delete Selected"
+        severity="danger"
+        [disabled]="selectedSprints.length === 0 || loading"
+        (onClick)="deleteSelectedSprints()">
+      </p-button>
+    </div>
+  </div>
+
+  <!-- Sprints Table -->
+  <p-table 
+    [value]="sprints" 
+    [paginator]="true" 
+    [rows]="10"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} sprints"
+    [rowsPerPageOptions]="[10, 25, 50]"
+    styleClass="p-datatable-gridlines"
+    [loading]="loading">
+    
+    <ng-template pTemplate="header">
+      <tr>
+        <th>
+          <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+        </th>
+        <th>Sprint Name</th>
+        <th>Goal</th>
+        <th>Duration</th>
+        <th>Status</th>
+        <th>Project</th>
+        <th>Actions</th>
+      </tr>
+    </ng-template>
+    
+    <ng-template pTemplate="body" let-sprint>
+      <tr>
+        <td>
+          <p-tableCheckbox [value]="sprint"></p-tableCheckbox>
+        </td>
+        <td>
+          <!-- Updated to use backend property names -->
+          <div class="font-medium text-900">{{ sprint.nom }}</div>
+          <div class="text-sm text-600">Duration: {{ (sprint.dateFin.getTime() - sprint.dateDebut.getTime()) / (1000 * 60 * 60 * 24) }} days</div>
+        </td>
+        <td>
+          <div class="max-w-20rem">{{ sprint.objectif }}</div>
+        </td>
+        <td>
+          <div class="text-sm">
+            <div>{{ formatDate(sprint.dateDebut) }}</div>
+            <div class="text-600">to {{ formatDate(sprint.dateFin) }}</div>
+          </div>
+        </td>
+        <td>
+          <p-tag 
+            [value]="getStatusLabel(sprint.statut)" 
+            [severity]="getStatusSeverity(sprint.statut)">
+          </p-tag>
+          <div class="mt-1">
+            <p-dropdown 
+              [ngModel]="sprint.statut"
+              [options]="statusOptions"
+              (ngModelChange)="changeSprintStatus(sprint, $event)"
+              [disabled]="loading"
+              [style]="{'min-width': '120px'}"
+              placeholder="Change Status">
+            </p-dropdown>
+          </div>
+        </td>
+        <td>
+          <div class="text-sm" *ngIf="sprint.projet">
+            <div class="font-medium">{{ sprint.projet.nom }}</div>
+            <div class="text-600">ID: {{ sprint.projet.id }}</div>
+          </div>
+          <div class="text-sm text-600" *ngIf="!sprint.projet">No project assigned</div>
+        </td>
+        <td>
+          <div class="flex gap-1">
+            <p-button 
+              icon="pi pi-eye" 
+              size="small" 
+              severity="info"
+              [text]="true"
+              [disabled]="loading"
+              pTooltip="View Details"
+              (onClick)="viewSprintDetails(sprint)">
+            </p-button>
+            <p-button 
+              icon="pi pi-pencil" 
+              size="small" 
+              severity="success"
+              [text]="true"
+              [disabled]="loading"
+              pTooltip="Edit Sprint"
+              (onClick)="editSprint(sprint)">
+            </p-button>
+            <p-button 
+              icon="pi pi-trash" 
+              size="small" 
+              severity="danger"
+              [text]="true"
+              [disabled]="loading"
+              pTooltip="Delete Sprint (Note: Cannot delete sprints with related data)"
+              (onClick)="confirmDelete(sprint)">
+            </p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>
+
+<!-- Add/Edit Sprint Dialog -->
+<p-dialog 
+  [(visible)]="displayDialog" 
+  [header]="isEditMode ? 'Edit Sprint' : 'Add New Sprint'"
+  [modal]="true" 
+  [style]="{width: '600px'}"
+  [closable]="true">
+  
+  <div class="grid formgrid p-fluid">
+    <div class="field col-12">
+      <!-- Updated form fields to match backend entity -->
+      <label for="sprintName" class="font-medium">Sprint Name *</label>
+      <input 
+        pInputText 
+        id="sprintName" 
+        [(ngModel)]="sprint.nom" 
+        placeholder="Enter sprint name"
+        class="w-full">
+    </div>
+    
+    <div class="field col-12">
+      <label for="sprintGoal" class="font-medium">Sprint Goal *</label>
+      <textarea 
+        pInputTextarea 
+        id="sprintGoal" 
+        [(ngModel)]="sprint.objectif" 
+        placeholder="Describe the sprint goal"
+        rows="3"
+        class="w-full">
+      </textarea>
+    </div>
+    
+    <div class="field col-6">
+      <label for="startDate" class="font-medium">Start Date *</label>
+      <p-calendar 
+        [(ngModel)]="sprint.dateDebut" 
+        dateFormat="yy-mm-dd"
+        [showIcon]="true"
+        inputId="startDate">
+      </p-calendar>
+    </div>
+    
+    <div class="field col-6">
+      <label for="endDate" class="font-medium">End Date *</label>
+      <p-calendar 
+        [(ngModel)]="sprint.dateFin" 
+        dateFormat="yy-mm-dd"
+        [showIcon]="true"
+        inputId="endDate">
+      </p-calendar>
+    </div>
+    
+    <div class="field col-6">
+      <label for="status" class="font-medium">Status</label>
+      <p-dropdown 
+        [(ngModel)]="sprint.statut" 
+        [options]="statusOptions"
+        placeholder="Select status"
+        inputId="status">
+      </p-dropdown>
+    </div>
+
+    <div class="field col-6">
+      <label for="project" class="font-medium">Project *</label>
+      <p-dropdown 
+        [(ngModel)]="selectedProjectId" 
+        [options]="projectOptions"
+        placeholder="Select project"
+        inputId="project">
+      </p-dropdown>
+    </div>
+  </div>
+  
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button 
+        label="Cancel" 
+        severity="secondary" 
+        [disabled]="loading"
+        (onClick)="displayDialog = false">
+      </p-button>
+      <p-button 
+        [label]="isEditMode ? 'Update' : 'Create'" 
+        [disabled]="!isFormValid() || loading"
+        [loading]="loading"
+        (onClick)="saveSprint()">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Enhanced confirm dialog with better messaging -->
+<p-confirmDialog 
+  [style]="{width: '450px'}"
+  [baseZIndex]="10000"
+  rejectButtonStyleClass="p-button-text">
+</p-confirmDialog>
+
+<p-toast position="top-right"></p-toast>

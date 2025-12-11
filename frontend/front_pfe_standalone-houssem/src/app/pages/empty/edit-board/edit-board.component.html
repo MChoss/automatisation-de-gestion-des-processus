@@ -1,0 +1,74 @@
+<div class="edit-board-modal">
+    <div class="modal-header">
+        <h2 class="modal-title">Edit Board</h2>
+        <button type="button" class="close-btn" (click)="close.emit()" aria-label="Close">
+            <fa-icon [icon]="faTimes"></fa-icon>
+        </button>
+    </div>
+
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="form-label">Board Name</label>
+            <input
+                type="text"
+                name="name"
+                class="form-input"
+                [(ngModel)]="board.name"
+                placeholder="Enter board name..."
+                required
+            />
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Description</label>
+            <textarea
+                name="description"
+                class="form-textarea"
+                [(ngModel)]="board.description"
+                placeholder="Add a description for your board..."
+                rows="3"
+            ></textarea>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Columns</label>
+            <div class="columns-container">
+                @for (col of board.columns; track $index; let i = $index) {
+                    <div class="column-item">
+                        <div class="column-input-group">
+                            <input
+                                type="text"
+                                class="column-input"
+                                placeholder="Column title..."
+                                [(ngModel)]="col.name"
+                            />
+                            <button
+                                type="button"
+                                class="remove-btn"
+                                (click)="removeColumn(i)"
+                                [attr.aria-label]="'Remove column ' + (i + 1)"
+                            >
+                                <fa-icon [icon]="faTrash"></fa-icon>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button type="button" class="add-column-btn" (click)="addColumn()">
+                <fa-icon [icon]="faPlus"></fa-icon>
+                <span>Add Column</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="cancel-btn" (click)="close.emit()">
+            Cancel
+        </button>
+        <button type="button" class="save-btn" (click)="submitForm()">
+            <fa-icon [icon]="faSave"></fa-icon>
+            <span>Save Changes</span>
+        </button>
+    </div>
+</div>

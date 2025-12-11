@@ -1,0 +1,380 @@
+<div class="backlog-items-container">
+  <!-- Header Section -->
+  <div class="backlog-items-header">
+    <div class="header-content">
+      <div class="header-left">
+        <button 
+          pButton 
+          type="button" 
+          icon="pi pi-arrow-left" 
+          class="p-button-text p-button-plain"
+          (click)="goBack()"
+          pTooltip="Back">
+        </button>
+        <div class="header-title">
+          <h1>Backlog Items</h1>
+          <p class="header-subtitle" *ngIf="currentProductBacklog">
+            {{ currentProductBacklog.projectName }}
+          </p>
+          <p class="header-subtitle" *ngIf="!currentProductBacklog">
+            All Backlog Items
+          </p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button 
+          pButton 
+          type="button" 
+          label="Add Item" 
+          icon="pi pi-plus"
+          class="p-button-primary"
+          (click)="showAddDialog()">
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">{{ getTotalItems() }}</div>
+        <div class="stat-label">Total Items</div>
+      </div>
+      <div class="stat-icon">
+        <i class="pi pi-list"></i>
+      </div>
+    </div>
+    <div class="stat-card todo">
+      <div class="stat-content">
+        <div class="stat-number">{{ getTodoItems() }}</div>
+        <div class="stat-label">To Do</div>
+      </div>
+      <div class="stat-icon">
+        <i class="pi pi-circle"></i>
+      </div>
+    </div>
+    <div class="stat-card progress">
+      <div class="stat-content">
+        <div class="stat-number">{{ getInProgressItems() }}</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="stat-icon">
+        <i class="pi pi-clock"></i>
+      </div>
+    </div>
+    <div class="stat-card completed">
+      <div class="stat-content">
+        <div class="stat-number">{{ getCompletedItems() }}</div>
+        <div class="stat-label">Completed</div>
+      </div>
+      <div class="stat-icon">
+        <i class="pi pi-check-circle"></i>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">{{ getTotalStoryPoints() }}</div>
+        <div class="stat-label">Story Points</div>
+      </div>
+      <div class="stat-icon">
+        <i class="pi pi-star"></i>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-content">
+      <div class="search-field">
+        <span class="p-input-icon-left">
+          <i class="pi pi-search"></i>
+          <input 
+            type="text" 
+            pInputText 
+            placeholder="Search items..." 
+            [(ngModel)]="searchTerm"
+            (keyup.enter)="searchItems()"
+            class="search-input">
+        </span>
+        <button 
+          pButton 
+          type="button" 
+          icon="pi pi-search"
+          class="p-button-outlined"
+          (click)="searchItems()">
+        </button>
+      </div>
+      <div class="filter-field">
+        <p-dropdown 
+          [(ngModel)]="filterStatus" 
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Filter by status"
+          [showClear]="true"
+          (onChange)="filterByStatus()">
+        </p-dropdown>
+      </div>
+      <button 
+        pButton 
+        type="button" 
+        label="Clear Filters"
+        icon="pi pi-filter-slash"
+        class="p-button-text"
+        (click)="clearFilters()">
+      </button>
+    </div>
+  </div>
+
+  <!-- Items Table -->
+  <div class="backlog-items-table-container">
+    <p-table 
+      [value]="backlogItems" 
+      [(selection)]="selectedItems"
+      [paginator]="true" 
+      [rows]="pageSize"
+      [totalRecords]="totalRecords"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      [loading]="loading"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      styleClass="p-datatable-gridlines"
+      responsiveLayout="scroll">
+      
+      <ng-template pTemplate="caption">
+        <div class="table-header">
+          <span class="table-title">Backlog Items</span>
+          <div class="table-actions">
+            <button 
+              pButton 
+              type="button" 
+              icon="pi pi-trash" 
+              class="p-button-danger p-button-outlined"
+              [disabled]="selectedItems.length === 0"
+              (click)="bulkDelete()"
+              pTooltip="Delete Selected">
+            </button>
+          </div>
+        </div>
+      </ng-template>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 3rem">
+            <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+          </th>
+          <th pSortableColumn="titre">Title <p-sortIcon field="titre"></p-sortIcon></th>
+          <th pSortableColumn="priorite">Priority <p-sortIcon field="priorite"></p-sortIcon></th>
+          <th pSortableColumn="points">Points <p-sortIcon field="points"></p-sortIcon></th>
+          <th pSortableColumn="statut">Status <p-sortIcon field="statut"></p-sortIcon></th>
+          <th *ngIf="!currentProductBacklogId">Product Backlog</th>
+          <th style="width: 12rem">Actions</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td>
+            <p-tableCheckbox [value]="item"></p-tableCheckbox>
+          </td>
+          <td>
+            <div class="item-title">
+              <strong>{{ item.titre }}</strong>
+              <div class="item-description" *ngIf="item.description">
+                {{ item.description }}
+              </div>
+            </div>
+          </td>
+          <td>
+            <p-dropdown 
+              [ngModel]="item.priorite" 
+              [options]="priorityOptions"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="updatePriority(item, $event.value)"
+              [style]="{'min-width': '120px'}">
+            </p-dropdown>
+          </td>
+          <td>
+            <span class="story-points" *ngIf="item.points">{{ item.points }}</span>
+            <span *ngIf="!item.points">-</span>
+          </td>
+          <td>
+            <p-dropdown 
+              [ngModel]="item.statut" 
+              [options]="statusOptions"
+              optionLabel="label"
+              optionValue="value"
+              (onChange)="changeStatus(item, $event.value)"
+              [style]="{'min-width': '120px'}">
+            </p-dropdown>
+          </td>
+          <td *ngIf="!currentProductBacklogId">
+            <span class="product-backlog-name">
+              {{ getProductBacklogName(item.productBacklogId || 0) }}
+            </span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                pButton 
+                type="button" 
+                icon="pi pi-pencil" 
+                class="p-button-text p-button-sm"
+                (click)="editItem(item)"
+                pTooltip="Edit">
+              </button>
+              <button 
+                pButton 
+                type="button" 
+                icon="pi pi-trash" 
+                class="p-button-text p-button-sm p-button-danger"
+                (click)="deleteItem(item)"
+                pTooltip="Delete">
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td [attr.colspan]="currentProductBacklogId ? 6 : 7" class="text-center">
+            <div class="empty-state">
+              <i class="pi pi-inbox empty-icon"></i>
+              <h3>No backlog items found</h3>
+              <p>Start by creating your first backlog item</p>
+              <button 
+                pButton 
+                type="button" 
+                label="Create First Item" 
+                icon="pi pi-plus"
+                class="p-button-primary"
+                (click)="showAddDialog()">
+              </button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<!-- Add/Edit Dialog -->
+<p-dialog 
+  [(visible)]="displayDialog" 
+  [header]="isEditMode ? 'Edit Backlog Item' : 'Create Backlog Item'"
+  [modal]="true" 
+  [style]="{width: '600px'}"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false">
+  
+  <div class="dialog-content">
+    <div class="field">
+      <label for="titre">Title *</label>
+      <input 
+        id="titre"
+        type="text" 
+        pInputText 
+        [(ngModel)]="currentItem.titre" 
+        placeholder="Enter item title"
+        class="w-full">
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea 
+        id="description"
+        pInputTextarea 
+        [(ngModel)]="currentItem.description" 
+        placeholder="Enter item description"
+        rows="3"
+        class="w-full">
+      </textarea>
+    </div>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="priorite">Priority *</label>
+        <p-dropdown 
+          id="priorite"
+          [(ngModel)]="currentItem.priorite" 
+          [options]="priorityOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select priority"
+          class="w-full">
+        </p-dropdown>
+      </div>
+
+      <div class="field">
+        <label for="points">Story Points</label>
+        <p-inputNumber 
+          id="points"
+          [(ngModel)]="currentItem.points" 
+          [min]="0"
+          [max]="100"
+          placeholder="0"
+          class="w-full">
+        </p-inputNumber>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field">
+        <label for="statut">Status</label>
+        <p-dropdown 
+          id="statut"
+          [(ngModel)]="currentItem.statut" 
+          [options]="statusOptions"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Select status"
+          class="w-full">
+        </p-dropdown>
+      </div>
+
+      <div class="field" *ngIf="!currentProductBacklogId">
+        <label for="productBacklog">Product Backlog *</label>
+        <p-dropdown 
+          id="productBacklog"
+          [(ngModel)]="currentItem.productBacklogId" 
+          [options]="productBacklogs"
+          optionLabel="projectName"
+          optionValue="id"
+          placeholder="Select product backlog"
+          class="w-full">
+        </p-dropdown>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <button 
+        pButton 
+        type="button" 
+        label="Cancel" 
+        icon="pi pi-times"
+        class="p-button-text"
+        (click)="displayDialog = false">
+      </button>
+      <button 
+        pButton 
+        type="button" 
+        [label]="isEditMode ? 'Update' : 'Create'" 
+        icon="pi pi-check"
+        class="p-button-primary"
+        [disabled]="!isFormValid()"
+        (click)="saveItem()">
+      </button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

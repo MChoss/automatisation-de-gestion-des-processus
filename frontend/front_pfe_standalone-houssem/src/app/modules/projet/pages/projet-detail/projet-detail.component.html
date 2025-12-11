@@ -1,0 +1,201 @@
+<div class="layout-wrapper">
+    <app-topbar></app-topbar>
+    <app-sidebar></app-sidebar>
+
+    <div class="main-content">
+        <div class="project-detail-container">
+            <!-- Header Section -->
+            <div class="detail-header">
+                <div class="header-left">
+                    <button
+                        type="button"
+                        class="back-btn p-button-text p-button-plain"
+                        pButton
+                        icon="pi pi-arrow-left"
+                        (click)="goBack()"
+                        pTooltip="Go Back">
+                    </button>
+                    <h1 class="project-title">{{ project?.title || 'Project Details' }}</h1>
+                </div>
+
+                <div class="header-actions">
+                    <button
+                        type="button"
+                        pButton
+                        [label]="isEditMode ? 'Cancel' : 'Edit'"
+                        [icon]="isEditMode ? 'pi pi-times' : 'pi pi-pencil'"
+                        class="p-button-outlined"
+                        (click)="toggleEditMode()"
+                        [disabled]="!project">
+                    </button>
+
+                    <button
+                        type="button"
+                        pButton
+                        label="Save"
+                        icon="pi pi-check"
+                        class="p-button-success"
+                        (click)="saveProject()"
+                        [disabled]="!isEditMode || !isFormValid()"
+                        *ngIf="isEditMode">
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" *ngIf="!project && !error">
+                <i class="pi pi-spin pi-spinner loading-icon"></i>
+                <h3>Loading Project...</h3>
+                <p>Please wait while we fetch the project details.</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="error-state" *ngIf="error">
+                <i class="pi pi-exclamation-triangle error-icon"></i>
+                <h3>Error</h3>
+                <p>{{ error }}</p>
+                <button
+                    type="button"
+                    pButton
+                    label="Go Back"
+                    icon="pi pi-arrow-left"
+                    class="p-button-outlined"
+                    (click)="goBack()">
+                </button>
+            </div>
+
+            <!-- Project Details -->
+            <div class="project-card" *ngIf="project && !error">
+                <div class="card-content">
+                    <!-- Status Section -->
+                    <div class="status-section">
+                        <span class="status-label">Status:</span>
+
+                        <!-- View Mode -->
+                        <span
+                            class="status-badge"
+                            [ngClass]="getStatusClass(project.status)"
+                            *ngIf="!isEditMode">
+              {{ project.status }}
+            </span>
+
+                        <!-- Edit Mode -->
+                        <p-dropdown
+                            [(ngModel)]="project.status"
+                            [options]="statusOptions"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Select Status"
+                            class="status-dropdown"
+                            *ngIf="isEditMode">
+                        </p-dropdown>
+                    </div>
+
+                    <!-- Project Information Grid -->
+                    <div class="info-grid">
+                        <!-- Title -->
+                        <div class="info-item">
+                            <label class="info-label">Project Title</label>
+                            <p class="info-value" *ngIf="!isEditMode">{{ project.title }}</p>
+                            <input
+                                type="text"
+                                pInputText
+                                [(ngModel)]="project.title"
+                                class="edit-input"
+                                placeholder="Enter project title"
+                                *ngIf="isEditMode">
+                        </div>
+
+                        <!-- Priority -->
+                        <div class="info-item">
+                            <label class="info-label">Priority</label>
+                            <p class="info-value" *ngIf="!isEditMode">{{ project.priority || 'Not set' }}</p>
+                            <p-dropdown
+                                [(ngModel)]="project.priority"
+                                [options]="priorityOptions"
+                                optionLabel="label"
+                                optionValue="value"
+                                placeholder="Select Priority"
+                                *ngIf="isEditMode">
+                            </p-dropdown>
+                        </div>
+
+                        <!-- Created Date -->
+                        <div class="info-item">
+                            <label class="info-label">Created Date</label>
+                            <p class="info-value">{{ formatDate(project.createdDate) }}</p>
+                        </div>
+
+                        <!-- Last Modified -->
+                        <div class="info-item" *ngIf="project.lastModified">
+                            <label class="info-label">Last Modified</label>
+                            <p class="info-value">{{ formatDate(project.lastModified) }}</p>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="info-item full-width">
+                            <label class="info-label">Description</label>
+                            <p class="info-value description" *ngIf="!isEditMode">{{ project.description }}</p>
+                            <textarea
+                                pInputTextarea
+                                [(ngModel)]="project.description"
+                                class="edit-textarea"
+                                placeholder="Enter project description"
+                                rows="4"
+                                *ngIf="isEditMode">
+              </textarea>
+                        </div>
+                    </div>
+
+                    <!-- Action Section -->
+                    <div class="action-section">
+                        <h3>Project Actions</h3>
+                        <div class="action-buttons">
+                            <button
+                                type="button"
+                                pButton
+                                label="View Tasks"
+                                icon="pi pi-list"
+                                class="p-button-outlined"
+                                (click)="viewTasks()">
+                            </button>
+
+                            <button
+                                type="button"
+                                pButton
+                                label="Manage Team"
+                                icon="pi pi-users"
+                                class="p-button-outlined"
+                                (click)="manageTeam()">
+                            </button>
+
+                            <button
+                                type="button"
+                                pButton
+                                label="View Reports"
+                                icon="pi pi-chart-bar"
+                                class="p-button-outlined"
+                                (click)="viewReports()">
+                            </button>
+
+                            <button
+                                type="button"
+                                pButton
+                                label="Delete Project"
+                                icon="pi pi-trash"
+                                class="p-button-danger p-button-outlined"
+                                (click)="deleteProject()">
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog></p-confirmDialog>

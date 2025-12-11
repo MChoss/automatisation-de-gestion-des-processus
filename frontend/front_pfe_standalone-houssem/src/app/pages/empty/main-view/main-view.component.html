@@ -1,0 +1,90 @@
+<div class="taskflow-container">
+  <app-topbar></app-topbar>
+  <app-sidebar></app-sidebar>
+    <div class="taskflow-header">
+        <div class="board-info">
+            <h1 class="board-title">{{board.name}}</h1>
+            <p class="board-subtitle">Main project roadmap and features</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary add-task-btn" (click)="newTaskModal()">
+                <fa-icon [icon]="faPlus"></fa-icon>
+                Add Task
+            </button>
+            <button class="btn btn-outline-secondary analytics-btn">
+                <fa-icon [icon]="faChartBar"></fa-icon>
+                Analytics
+            </button>
+            <button class="btn btn-outline-secondary settings-btn" (click)="openEditBoard()">
+                <fa-icon [icon]="faCog"></fa-icon>
+            </button>
+        </div>
+    </div>
+
+    <div class="view-toggle">
+        <button
+            class="toggle-btn"
+            [class.active]="!tableView"
+            (click)="tableView = false">
+            Kanban View
+        </button>
+        <button
+            class="toggle-btn"
+            [class.active]="tableView"
+            (click)="tableView = true">
+            Table View
+        </button>
+    </div>
+
+    <div class="board-content">
+        <div *ngIf="tableView; else kanbanView" class="table-view-container">
+            <app-table-view
+                [columns]="board.columns"
+                [tasks]="tasks"
+                (newTask)="newTaskModal()"
+                (openTask)="openTaskModal($event)">
+            </app-table-view>
+        </div>
+
+        <ng-template #kanbanView>
+            <app-kanban-view
+                [columns]="board.columns"
+                [tasks]="tasks"
+                (newTask)="newTaskModal()"
+                (openTask)="openTaskModal($event)"
+                (saveTasks)="saveTasks()">
+            </app-kanban-view>
+        </ng-template>
+    </div>
+</div>
+
+<!-- Edit Board Modal Overlay -->
+<div *ngIf="showEditBoard" class="modal-overlay" (click)="closeEditBoard()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <app-edit-board
+            [board]="board"
+            (close)="closeEditBoard()">
+        </app-edit-board>
+    </div>
+</div>
+
+<!-- Add/Edit Task Modal -->
+<ng-template #addTask let-modal>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">{{selectedTask.ready ? 'Edit Task' : 'New Task'}}</h4>
+                <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss()"></button>
+            </div>
+            <div class="modal-body">
+                <app-add-task
+                    [task]="selectedTask"
+                    [columns]="board.columns"
+                    (saveTasks)="saveTasks(); modal.close()"
+                    (close)="modal.dismiss()"
+                    (removeTask)="removeTask($event); modal.close()">
+                </app-add-task>
+            </div>
+        </div>
+    </div>
+</ng-template>

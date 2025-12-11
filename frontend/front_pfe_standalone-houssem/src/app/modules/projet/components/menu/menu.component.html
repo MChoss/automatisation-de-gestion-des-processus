@@ -1,0 +1,95 @@
+<app-topbar></app-topbar>
+<app-sidebar></app-sidebar>
+
+<div class="main-content">
+    <div class="projects-container">
+        <h2 class="projects-title">My Projects</h2>
+
+        <!-- Search and Filter Section -->
+        <div class="search-filter-section">
+            <div class="search-container">
+                <p-iconfield iconPosition="left">
+                    <input
+                        pInputText
+                        type="text"
+                        placeholder="Search projects..."
+                        [(ngModel)]="searchTerm"
+                        (input)="onSearchChange()"
+                        class="search-input"
+                    />
+                    <p-inputicon class="pi pi-search"></p-inputicon>
+                </p-iconfield>
+            </div>
+
+            <div class="filter-container">
+                <p-dropdown
+                    [options]="statusOptions"
+                    [(ngModel)]="selectedStatus"
+                    (onChange)="onStatusChange()"
+                    placeholder="Filter by Status"
+                    class="filter-dropdown"
+                ></p-dropdown>
+
+                <p-dropdown
+                    [options]="sortOptions"
+                    [(ngModel)]="selectedSort"
+                    (onChange)="onSortChange()"
+                    class="sort-dropdown"
+                ></p-dropdown>
+
+                <button
+                    pButton
+                    type="button"
+                    label="Clear Filters"
+                    class="p-button-outlined clear-btn"
+                    (click)="clearFilters()"
+                    [disabled]="!hasActiveFilters()"
+                ></button>
+            </div>
+        </div>
+
+        <!-- Results Info -->
+        <div class="results-info">
+            <p class="results-count">
+                Showing {{filteredProjects.length}} of {{allProjects.length}} projects
+                <span *ngIf="searchTerm" class="search-term">for "{{searchTerm}}"</span>
+            </p>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="projects-grid" *ngIf="filteredProjects.length > 0">
+            <div class="card" *ngFor="let project of filteredProjects">
+                <div class="card__img">
+                    <span class="card__span" [ngClass]="getStatusClass(project.status)">
+                        {{project.status}}
+                    </span>
+                </div>
+                <div class="card-int">
+                    <p class="card-int__title">{{project.title}}</p>
+                    <p class="excerpt">{{project.description}}</p>
+                    <button class="card-int__button" (click)="viewProject(project.id)">Show</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredProjects.length === 0">
+            <i class="pi pi-search empty-icon"></i>
+            <h3>No Projects Found</h3>
+            <p *ngIf="searchTerm || selectedStatus">
+                No projects match your current filters. Try adjusting your search criteria.
+            </p>
+            <p *ngIf="!searchTerm && !selectedStatus">
+                You don't have any projects yet. Create your first project to get started!
+            </p>
+            <button
+                pButton
+                type="button"
+                label="Clear Filters"
+                class="p-button-outlined"
+                (click)="clearFilters()"
+                *ngIf="hasActiveFilters()"
+            ></button>
+        </div>
+    </div>
+</div>

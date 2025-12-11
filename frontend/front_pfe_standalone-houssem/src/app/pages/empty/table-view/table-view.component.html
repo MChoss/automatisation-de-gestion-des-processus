@@ -1,0 +1,138 @@
+<div class="table-view-container">
+    <!-- Header Section -->
+    <div class="table-header">
+        <h2 class="table-title">Tasks</h2>
+
+        <div class="table-controls">
+            <!-- Search Bar -->
+            <div class="search-container">
+                <i class="pi pi-search search-icon"></i>
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="Search tasks..."
+                    [(ngModel)]="searchTerm"
+                    (input)="onSearch()"
+                >
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-container">
+                <select class="filter-select" [(ngModel)]="statusFilter" (change)="onFilterChange()">
+                    <option value="">All Status</option>
+                    <option value="0">To Do</option>
+                    <option value="1">In Progress</option>
+                    <option value="2">Review</option>
+                    <option value="3">Done</option>
+                </select>
+                <i class="pi pi-chevron-down filter-icon"></i>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="filter-container">
+                <select class="filter-select" [(ngModel)]="priorityFilter" (change)="onFilterChange()">
+                    <option value="">All Priority</option>
+                    <option value="1">High</option>
+                    <option value="2">Medium</option>
+                    <option value="3">Low</option>
+                </select>
+                <i class="pi pi-chevron-down filter-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-wrapper">
+        <table class="modern-table">
+            <thead>
+            <tr>
+                <th class="sortable" (click)="sortBy('title')">
+                    Task
+                    <i class="pi pi-sort-alt sort-icon"></i>
+                </th>
+                <th class="sortable" (click)="sortBy('status')">
+                    Status
+                    <i class="pi pi-sort-alt sort-icon"></i>
+                </th>
+                <th class="sortable" (click)="sortBy('priority')">
+                    Priority
+                    <i class="pi pi-sort-alt sort-icon"></i>
+                </th>
+                <th>Assignee</th>
+                <th class="sortable" (click)="sortBy('dueDate')">
+                    Due Date
+                    <i class="pi pi-sort-alt sort-icon"></i>
+                </th>
+                <th>Labels</th>
+                <th>Created</th>
+            </tr>
+            </thead>
+            <tbody>
+                @if (filteredTasks.length === 0) {
+                    <tr>
+                        <td colspan="7" class="no-data">
+                            <div class="no-data-content">
+                                <i class="pi pi-inbox no-data-icon"></i>
+                                <p>No tasks found</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @for (task of filteredTasks; track task.id) {
+                    <tr class="table-row" (click)="openTask.emit(task)">
+                        <td class="task-cell">
+                            <div class="task-content">
+                                <h4 class="task-title">{{ task.title }}</h4>
+                                @if (task.description) {
+                                    <p class="task-description">{{ task.description }}</p>
+                                }
+                            </div>
+                        </td>
+                        <td>
+              <span class="status-badge" [ngClass]="'status-' + getStatusClass(task.column)">
+                {{ getStatusName(task.column) }}
+              </span>
+                        </td>
+                        <td>
+              <span class="priority-badge" [ngClass]="'priority-' + getPriorityClass(task.priority)">
+                {{ getPriorityName(task.priority) }}
+              </span>
+                        </td>
+                        <td>
+                            <div class="assignee-cell">
+                                @if (task.assignee) {
+                                    <div class="assignee-avatar">
+                                        {{ getInitials(task.assignee) }}
+                                    </div>
+                                    <span class="assignee-name">{{ task.assignee }}</span>
+                                } @else {
+                                    <div class="assignee-avatar unassigned">
+                                        <i class="pi pi-user"></i>
+                                    </div>
+                                    <span class="assignee-name unassigned">Unassigned</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+              <span class="due-date" [ngClass]="{ 'overdue': isOverdue(task.dueDate) }">
+                {{ task.dueDate || 'No due date' }}
+              </span>
+                        </td>
+                        <td>
+                            <div class="labels-cell">
+                                @for (label of task.labels; track label) {
+                                    <span class="label-tag" [ngClass]="'label-' + getLabelClass(label)">
+                    {{ label }}
+                  </span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <span class="created-date">{{ getCurrentDate() }}</span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

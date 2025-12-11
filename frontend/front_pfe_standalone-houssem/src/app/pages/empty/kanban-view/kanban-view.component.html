@@ -1,0 +1,66 @@
+<div class="kanban-board">
+    <div class="kanban-columns" cdkDropListGroup>
+        <div *ngFor="let column of columns; let index = index" class="kanban-column">
+            <div class="column-header">
+                <h3 class="column-title">{{column.name}}</h3>
+                <span class="task-count">{{getTasks(index).length}}</span>
+                <button class="add-column-task" (click)="newTask.emit()">
+                    <fa-icon [icon]="faPlus"></fa-icon>
+                </button>
+            </div>
+
+            <div class="column-content"
+                 cdkDropList
+                 [cdkDropListData]="getTasks(index)"
+                 (cdkDropListDropped)="drop($event, index)">
+
+                <div *ngFor="let task of getTasks(index); trackBy: trackByTaskId" class="task-card-wrapper">
+                    <div *ngIf="task.ready" class="task-card" cdkDrag [cdkDragData]="task">
+                        <div class="task-header" (click)="openTask.emit(task)">
+                            <h4 class="task-title">{{task.title}}</h4>
+                            <button class="task-menu" (click)="$event.stopPropagation()">
+                                <fa-icon [icon]="faEllipsisH"></fa-icon>
+                            </button>
+                        </div>
+
+                        <p class="task-description" (click)="openTask.emit(task)">{{task.description}}</p>
+
+                        <div class="task-tags" (click)="openTask.emit(task)">
+                            <span *ngFor="let label of task.labels" class="tag">{{label}}</span>
+                        </div>
+
+                        <div class="task-priority" [ngClass]="'priority-' + task.priority" (click)="openTask.emit(task)">
+                            {{getPriorityName(task.priority)}}
+                        </div>
+
+                        <div class="task-footer" (click)="openTask.emit(task)">
+                            <div class="task-date">
+                                <fa-icon [icon]="faCalendar"></fa-icon>
+                                {{task.dueDate || getCurrentDate()}}
+                            </div>
+                            <div class="task-stats">
+                <span class="stat">
+                  <fa-icon [icon]="faComment"></fa-icon>
+                    {{task.subTasks.length}}
+                </span>
+                                <span class="stat">
+                  <fa-icon [icon]="faHeart"></fa-icon>
+                  2
+                </span>
+                            </div>
+                        </div>
+
+                        <div *cdkDragPreview class="drag-preview">
+                            <div class="task-card preview">
+                                <h4 class="task-title">{{task.title}}</h4>
+                                <p class="task-description">{{task.description}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drop-placeholder" *cdkDropListPlaceholder></div>
+            </div>
+        </div>
+    </div>
+</div>

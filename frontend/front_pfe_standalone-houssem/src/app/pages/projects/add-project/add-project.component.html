@@ -1,0 +1,136 @@
+<app-topbar></app-topbar>
+<app-sidebar></app-sidebar>
+
+<div class="main-content">
+  <div class="add-project-container">
+     Header Section 
+    <div class="form-header">
+      <div class="header-left">
+        <button 
+          type="button" 
+          class="back-btn p-button-text p-button-plain" 
+          pButton 
+          icon="pi pi-arrow-left" 
+          (click)="goBack()"
+          pTooltip="Go Back">
+        </button>
+        <h1 class="form-title">Create New Project</h1>
+      </div>
+    </div>
+
+     Project Creation Form 
+    <div class="form-card">
+      <div class="card-content">
+        <form (ngSubmit)="createProject()" #projectForm="ngForm">
+          
+           Basic Information Section 
+          <div class="form-section">
+            <h3 class="section-title">Basic Information</h3>
+            
+            <div class="form-grid">
+               Project Title 
+              <div class="form-group">
+                <label for="title" class="form-label">Project Title *</label>
+                <input 
+                  id="title"
+                  type="text" 
+                  pInputText 
+                  [(ngModel)]="project.title"
+                  name="title"
+                  class="form-input"
+                  placeholder="Enter project title"
+                  required
+                  maxlength="100">
+                <small class="form-hint">Maximum 100 characters</small>
+              </div>
+
+               Project Status 
+              <div class="form-group">
+                <label for="status" class="form-label">Status *</label>
+                <p-dropdown 
+                  id="status"
+                  [(ngModel)]="project.status"
+                  name="status"
+                  [options]="statusOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select Status"
+                  class="form-dropdown"
+                  required>
+                </p-dropdown>
+              </div>
+
+               Project Priority 
+              <div class="form-group">
+                <label for="priority" class="form-label">Priority *</label>
+                <p-dropdown 
+                  id="priority"
+                  [(ngModel)]="project.priority"
+                  name="priority"
+                  [options]="priorityOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select Priority"
+                  class="form-dropdown"
+                  required>
+                </p-dropdown>
+              </div>
+            </div>
+
+             Project Description 
+            <div class="form-group full-width">
+              <label for="description" class="form-label">Description *</label>
+              <textarea 
+                id="description"
+                pInputTextarea 
+                [(ngModel)]="project.description"
+                name="description"
+                class="form-textarea"
+                placeholder="Enter detailed project description"
+                rows="6"
+                required
+                maxlength="1000">
+              </textarea>
+              <small class="form-hint">Maximum 1000 characters</small>
+            </div>
+          </div>
+
+           Form Actions 
+          <div class="form-actions">
+            <button 
+              type="button" 
+              pButton 
+              label="Reset Form" 
+              icon="pi pi-refresh"
+              class="p-button-outlined p-button-secondary"
+              (click)="resetForm()"
+              [disabled]="isSubmitting">
+            </button>
+            
+            <button 
+              type="button" 
+              pButton 
+              label="Cancel" 
+              icon="pi pi-times"
+              class="p-button-outlined"
+              (click)="goBack()"
+              [disabled]="isSubmitting">
+            </button>
+            
+            <button 
+              type="submit" 
+              pButton 
+              [label]="isSubmitting ? 'Creating...' : 'Create Project'" 
+              [icon]="isSubmitting ? 'pi pi-spin pi-spinner' : 'pi pi-plus'"
+              class="p-button-success"
+              [disabled]="!isFormValid() || isSubmitting">
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+ Toast Messages 
+<p-toast></p-toast>

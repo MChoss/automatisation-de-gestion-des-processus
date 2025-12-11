@@ -1,0 +1,250 @@
+<div class="projects-container">
+    <div class="header-section">
+        <h2 class="projects-title">{{ isAdmin() ? 'All Projects' : 'My Projects' }}</h2>
+        <button 
+            pButton 
+            type="button" 
+            label="New Project" 
+            icon="pi pi-plus"
+            class="p-button-primary"
+            (click)="openNewProjectDialog()"
+        ></button>
+    </div>
+
+    <div class="search-filter-section">
+        <div class="search-container">
+            <p-iconfield iconPosition="left">
+                <input
+                    pInputText
+                    type="text"
+                    placeholder="Search projects..."
+                    [(ngModel)]="searchTerm"
+                    (input)="onSearchChange()"
+                    class="search-input"
+                />
+                <p-inputicon class="pi pi-search"></p-inputicon>
+            </p-iconfield>
+        </div>
+
+        <div class="filter-container">
+            <p-dropdown
+                [options]="statusOptions"
+                [(ngModel)]="selectedStatus"
+                (onChange)="onStatusChange()"
+                placeholder="Filter by Status"
+                class="filter-dropdown"
+            ></p-dropdown>
+
+            <p-dropdown
+                [options]="sortOptions"
+                [(ngModel)]="selectedSort"
+                (onChange)="onSortChange()"
+                class="sort-dropdown"
+            ></p-dropdown>
+
+            <button
+                pButton
+                type="button"
+                label="Clear Filters"
+                class="p-button-outlined clear-btn"
+                (click)="clearFilters()"
+                [disabled]="!hasActiveFilters()"
+            ></button>
+        </div>
+    </div>
+
+    <div class="loading-container" *ngIf="loading">
+        <p-progressSpinner></p-progressSpinner>
+        <p>Loading projects...</p>
+    </div>
+
+    <p-message 
+        *ngIf="error && !loading" 
+        severity="error" 
+        [text]="error"
+        class="error-message"
+    >
+        <ng-template pTemplate="content">
+            <div class="error-content">
+                <span>{{ error }}</span>
+                <button 
+                    pButton 
+                    type="button" 
+                    label="Retry" 
+                    class="p-button-sm p-button-outlined"
+                    (click)="retryLoadProjects()"
+                ></button>
+            </div>
+        </ng-template>
+    </p-message>
+
+    <div class="results-info" *ngIf="!loading && !error">
+        <p class="results-count">
+            Showing {{filteredProjects.length}} of {{allProjects.length}} projects
+            <span *ngIf="searchTerm" class="search-term">for "{{searchTerm}}"</span>
+        </p>
+    </div>
+
+    <div class="projects-grid" *ngIf="filteredProjects.length > 0 && !loading && !error">
+        <div class="card" *ngFor="let project of filteredProjects">
+            <div class="card__img">
+                <span class="card__span" [ngClass]="getStatusClass(project.actif)">
+                    {{getStatusLabel(project.actif)}}
+                </span>
+                 
+                <div class="card-menu">
+                    <button 
+                        pButton 
+                        type="button" 
+                        icon="pi pi-ellipsis-v"
+                        class="p-button-rounded p-button-text p-button-sm"
+                        (click)="menu.toggle($event)"
+                        #menuButton
+                    ></button>
+                    <p-menu #menu [model]="getProjectMenuItems(project)" [popup]="true"></p-menu>
+                </div>
+            </div>
+            <div class="card-int">
+                <p class="card-int__title">{{project.nom}}</p>
+                <p class="excerpt">{{project.description}}</p>
+                <div class="card-footer">
+                    <small class="project-date">Created: {{project.dateDebut | date:'shortDate'}}</small>
+                    <button class="card-int__button" (click)="viewProject(project.id!)">View Details</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="empty-state" *ngIf="filteredProjects.length === 0 && !loading && !error">
+        <i class="pi pi-folder-open empty-icon"></i>
+        <h3>No Projects Found</h3>
+        <p *ngIf="searchTerm || selectedStatus">
+            No projects match your current filters. Try adjusting your search criteria.
+        </p>
+        <p *ngIf="!searchTerm && !selectedStatus">
+            You don't have any projects yet. Create your first project to get started!
+        </p>
+        <div class="empty-actions">
+            <button
+                pButton
+                type="button"
+                label="Create Project"
+                icon="pi pi-plus"
+                class="p-button-primary"
+                (click)="openNewProjectDialog()"
+                *ngIf="!searchTerm && !selectedStatus"
+            ></button>
+            <button
+                pButton
+                type="button"
+                label="Clear Filters"
+                class="p-button-outlined"
+                (click)="clearFilters()"
+                *ngIf="hasActiveFilters()"
+            ></button>
+        </div>
+    </div>
+</div>
+
+<p-dialog 
+    [(visible)]="projectDialog" 
+    [header]="editMode ? 'Edit Project' : 'New Project'"
+    [modal]="true" 
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    styleClass="project-dialog"
+    (onHide)="hideDialog()"
+>
+    <div class="project-form">
+         Error Message 
+        <p-message 
+            *ngIf="errorMessage" 
+            severity="error" 
+            [text]="errorMessage"
+            class="form-error"
+            [closable]="true"
+            (onClose)="clearError()"
+        ></p-message>
+
+         Project Name 
+        <div class="form-field">
+            <label for="projectName">Project Name *</label>
+            <input 
+                pInputText 
+                id="projectName"
+                [(ngModel)]="currentProject.nom" 
+                placeholder="Enter project name"
+                [class.ng-invalid]="!currentProject.nom.trim()"
+                required
+            />
+        </div>
+
+         Description 
+        <div class="form-field">
+            <label for="description">Description *</label>
+            <textarea 
+                pInputTextarea 
+                id="description"
+                [(ngModel)]="currentProject.description" 
+                placeholder="Enter project description"
+                rows="4"
+                [class.ng-invalid]="!currentProject.description.trim()"
+                required
+            ></textarea>
+        </div>
+
+         Start Date 
+        <div class="form-field">
+            <label for="startDate">Start Date *</label>
+            <p-calendar 
+                id="startDate"
+                [(ngModel)]="currentProject.dateDebut"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                placeholder="Select start date"
+                required
+            ></p-calendar>
+        </div>
+
+         Active Status 
+        <div class="form-field">
+            <div class="checkbox-field">
+                <p-checkbox 
+                    [(ngModel)]="currentProject.actif" 
+                    [binary]="true"
+                    inputId="activeStatus"
+                ></p-checkbox>
+                <label for="activeStatus">Active Project</label>
+            </div>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <div class="dialog-footer">
+            <button 
+                pButton 
+                type="button" 
+                label="Cancel" 
+                class="p-button-outlined"
+                (click)="hideDialog()"
+                [disabled]="submitting"
+            ></button>
+            <button 
+                pButton 
+                type="button" 
+                [label]="editMode ? 'Update' : 'Create'"
+                class="p-button-primary"
+                (click)="saveProject()"
+                [loading]="submitting"
+                [disabled]="!isFormValid()"
+            ></button>
+        </div>
+    </ng-template>
+</p-dialog>
+
+ Toast Messages 
+<p-toast></p-toast>
+
+ Confirmation Dialog 
+<p-confirmDialog></p-confirmDialog>

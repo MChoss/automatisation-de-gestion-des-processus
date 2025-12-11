@@ -1,0 +1,260 @@
+<div class="layout-wrapper">
+  <app-topbar></app-topbar>
+  <app-sidebar></app-sidebar>
+
+  <div class="layout-main-container">
+    <div class="layout-main">
+      <div class="card">
+        <div class="flex justify-content-between align-items-center mb-4">
+          <h2 class="text-2xl font-bold text-900 m-0">Sprint Backlogs Management</h2>
+          <div class="flex gap-2">
+            <p-button
+              icon="pi pi-plus"
+              label="Add Sprint Backlog"
+              (onClick)="showAddDialog()"
+              class="p-button-success"
+            ></p-button>
+            <p-button
+              icon="pi pi-trash"
+              label="Delete Selected"
+              (onClick)="deleteSelectedSprintBacklogs()"
+              [disabled]="selectedSprintBacklogs.length === 0"
+              class="p-button-danger"
+            ></p-button>
+          </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="grid mb-4">
+          <div class="col-12 md:col-4">
+            <span class="p-input-icon-left w-full">
+              <i class="pi pi-search"></i>
+              <input
+                type="text"
+                pInputText
+                placeholder="Search sprint backlogs..."
+                [(ngModel)]="searchTerm"
+                (input)="onSearchChange()"
+                class="w-full"
+              />
+            </span>
+          </div>
+          <div class="col-12 md:col-4">
+            <p-dropdown
+              [options]="productBacklogOptions"
+              [(ngModel)]="selectedProductBacklogFilter"
+              placeholder="Filter by Product Backlog"
+              (onChange)="onProductBacklogFilterChange()"
+              class="w-full"
+            ></p-dropdown>
+          </div>
+          <div class="col-12 md:col-4">
+            <p-button
+              icon="pi pi-filter-slash"
+              label="Clear Filters"
+              (onClick)="clearFilters()"
+              class="p-button-outlined w-full"
+            ></p-button>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <p-message
+          *ngIf="errorMessage"
+          severity="error"
+          [text]="errorMessage"
+          class="mb-4"
+          [closable]="true"
+          (onClose)="clearError()"
+        ></p-message>
+
+        <!-- Loading Spinner -->
+        <div *ngIf="loading" class="flex justify-content-center p-4">
+          <p-progressSpinner></p-progressSpinner>
+        </div>
+
+        <!-- Sprint Backlogs Table -->
+        <p-table
+          *ngIf="!loading"
+          [value]="sprintBacklogs"
+          [(selection)]="selectedSprintBacklogs"
+          [paginator]="true"
+          [rows]="10"
+          [showCurrentPageReport]="true"
+          currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+          [rowsPerPageOptions]="[10, 25, 50]"
+          dataKey="id"
+          responsiveLayout="scroll"
+          class="p-datatable-gridlines"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 3rem">
+                <p-tableHeaderCheckbox></p-tableHeaderCheckbox>
+              </th>
+              <th pSortableColumn="id">
+                ID <p-sortIcon field="id"></p-sortIcon>
+              </th>
+              <th>Product Backlog</th>
+              <th>User Stories</th>
+              <th>Story Points</th>
+              <th>Completion</th>
+              <th>Sprints</th>
+              <th>Actions</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-sprintBacklog>
+            <tr>
+              <td>
+                <p-tableCheckbox [value]="sprintBacklog"></p-tableCheckbox>
+              </td>
+              <td>{{ sprintBacklog.id }}</td>
+              <td>
+                <span *ngIf="sprintBacklog.productBacklog" class="font-medium">
+                  {{ sprintBacklog.productBacklog.nom }}
+                </span>
+                <span *ngIf="!sprintBacklog.productBacklog" class="text-500">
+                  No Product Backlog
+                </span>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <span class="font-medium">{{ sprintBacklog.completedUserStories }}/{{ sprintBacklog.totalUserStories }}</span>
+                  <p-progressBar
+                    [value]="sprintBacklog.completionPercentage"
+                    [showValue]="false"
+                    class="w-6rem"
+                  ></p-progressBar>
+                  <span class="text-sm text-500">{{ sprintBacklog.completionPercentage | number:'1.0-1' }}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <span class="font-medium">{{ sprintBacklog.completedStoryPoints }}/{{ sprintBacklog.totalStoryPoints }}</span>
+                  <p-progressBar
+                    [value]="sprintBacklog.storyPointsCompletionPercentage"
+                    [showValue]="false"
+                    class="w-6rem"
+                  ></p-progressBar>
+                  <span class="text-sm text-500">{{ sprintBacklog.storyPointsCompletionPercentage | number:'1.0-1' }}%</span>
+                </div>
+              </td>
+              <td>
+                <p-tag
+                  [value]="(sprintBacklog.completionPercentage != null ? (sprintBacklog.completionPercentage | number:'1.0-1') + '%' : undefined)"
+                  [severity]="getCompletionSeverity(sprintBacklog.completionPercentage)"
+                ></p-tag>
+              </td>
+              <td>
+                <span class="font-medium">{{ sprintBacklog.sprints?.length || 0 }}</span>
+                <span class="text-500 ml-1">sprint(s)</span>
+              </td>
+              <td>
+                <div class="flex gap-2">
+                  <p-button
+                    icon="pi pi-eye"
+                    class="p-button-rounded p-button-text p-button-info"
+                    pTooltip="View Details"
+                    (onClick)="viewSprintBacklogDetails(sprintBacklog)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-pencil"
+                    class="p-button-rounded p-button-text p-button-warning"
+                    pTooltip="Edit"
+                    (onClick)="editSprintBacklog(sprintBacklog)"
+                  ></p-button>
+                  <p-button
+                    icon="pi pi-trash"
+                    class="p-button-rounded p-button-text p-button-danger"
+                    pTooltip="Delete"
+                    (onClick)="confirmDelete(sprintBacklog)"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="text-center p-4">
+                <div class="flex flex-column align-items-center gap-3">
+                  <i class="pi pi-inbox text-4xl text-400"></i>
+                  <span class="text-lg text-600">No sprint backlogs found</span>
+                  <p-button
+                    label="Create First Sprint Backlog"
+                    icon="pi pi-plus"
+                    (onClick)="showAddDialog()"
+                    class="p-button-outlined"
+                  ></p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Dialog -->
+<p-dialog
+  [(visible)]="displayDialog"
+  [header]="isEditMode ? 'Edit Sprint Backlog' : 'Add New Sprint Backlog'"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '500px' }"
+  [draggable]="false"
+  [resizable]="false"
+>
+  <div class="grid formgrid p-fluid">
+    <div class="field col-12">
+      <label for="productBacklog" class="font-medium">Product Backlog</label>
+      <p-dropdown
+        id="productBacklog"
+        [options]="productBacklogOptions.slice(1)"
+        [(ngModel)]="selectedProductBacklogId"
+        placeholder="Select Product Backlog"
+        class="w-full"
+      ></p-dropdown>
+    </div>
+    <!-- Added sprint selection field as it's required -->
+    <div class="field col-12">
+      <label for="sprint" class="font-medium">Sprint *</label>
+      <p-dropdown
+        id="sprint"
+        [options]="[
+          { label: 'Sprint 1', value: 1 },
+          { label: 'Sprint 2', value: 2 },
+          { label: 'Sprint 3', value: 3 }
+        ]"
+        [(ngModel)]="selectedSprintId"
+        placeholder="Select Sprint"
+        class="w-full"
+      ></p-dropdown>
+      <small class="text-500">Required field</small>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancel"
+        icon="pi pi-times"
+        (onClick)="displayDialog = false"
+        class="p-button-text"
+      ></p-button>
+      <p-button
+        [label]="isEditMode ? 'Update' : 'Create'"
+        icon="pi pi-check"
+        (onClick)="saveSprintBacklog()"
+        [loading]="loading"
+        class="p-button-success"
+      ></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Toast Messages -->
+<p-toast></p-toast>
+
+<!-- Confirmation Dialog -->
+<p-confirmDialog></p-confirmDialog>
