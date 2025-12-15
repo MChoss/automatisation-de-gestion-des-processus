@@ -108,8 +108,8 @@ export class BpmnService extends BaseService {
   }
 
   // Validate BPMN XML
-  validateBpmnXml(bpmnXml: string, context?: HttpContext): Observable<{ valid: boolean; errors?: string[] }> {
-    return this.http.post<{ valid: boolean; errors?: string[] }>(
+  validateBpmnXml(bpmnXml: string, context?: HttpContext): Observable<{ valid: boolean; errors?: string[]; message?: string }> {
+    return this.http.post<{ valid: boolean; errors?: string[]; message?: string }>(
       `${this.rootUrl}/bpmn/editor/validate`,
       { bpmnXml },
       { context }
