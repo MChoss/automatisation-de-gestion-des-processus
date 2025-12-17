@@ -1,12 +1,12 @@
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
-    <!-- Mirror Maven Central to repo1 for environments where repo.maven.apache.org is blocked (HTTP 403). -->
+    <!-- Mirror Maven Central to a widely available mirror (Aliyun) for 403/blocked environments. -->
     <mirrors>
         <mirror>
-            <id>central-repo1</id>
+            <id>central-aliyun</id>
             <mirrorOf>central</mirrorOf>
-            <url>https://repo1.maven.org/maven2</url>
+            <url>https://mirrors.aliyun.com/repository/public/</url>
         </mirror>
     </mirrors>
 </settings>
