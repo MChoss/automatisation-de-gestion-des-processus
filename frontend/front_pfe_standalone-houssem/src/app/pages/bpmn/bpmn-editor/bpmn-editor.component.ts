@@ -17,6 +17,7 @@ import PropertiesPanelModule from 'bpmn-js-properties-panel/dist';
 
 import minimapModule from 'diagram-js-minimap';
 import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-bpmn-editor',
@@ -66,11 +67,24 @@ import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
           <div class="properties-content">
             <div class="form-group">
               <label>Model Name</label>
-              <input pInputText [(ngModel)]="modelName" placeholder="Enter model name" class="w-full" />
+              <input
+                pInputText
+                [(ngModel)]="modelName"
+                placeholder="Enter model name"
+                class="w-full"
+                (input)="onNameChange()"
+              />
             </div>
             <div class="form-group">
               <label>Model Key</label>
-              <input pInputText [(ngModel)]="modelKey" placeholder="Enter model key" class="w-full" />
+              <input
+                pInputText
+                [(ngModel)]="modelKey"
+                placeholder="Enter model key"
+                class="w-full"
+                (input)="onKeyInput()"
+              />
+              <small class="help-text">Key is required to save & deploy. It auto-fills from the name, but you can override it.</small>
             </div>
             <div class="form-group">
               <label>Description</label>
@@ -247,6 +261,13 @@ import camundaModdleDescriptor from 'camunda-bpmn-moddle/resources/camunda';
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
+    .help-text {
+      display: block;
+      margin-top: 0.35rem;
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
     .deployment-info {
       margin: 1rem 0;
     }
@@ -279,6 +300,8 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   modelDescription = '';
   deploymentDialog = false;
 
+  private keyManuallyEdited = false;
+
   isSaving = false;
   isValidating = false;
   isDeploying = false;
@@ -297,8 +320,8 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private bpmnService: BpmnService,
-    private messageService: MessageService
-  ) {}
+    private messageService: MessageService,
+    private authService: AuthService  ) {}
 
   ngOnInit(): void {}
 
@@ -402,6 +425,7 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
           this.modelName = model.name;
           this.modelKey = model.key;
           this.modelDescription = model.description || '';
+          this.keyManuallyEdited = true;
 
           if (model.bpmnXml) {
             await this.importDiagram(model.bpmnXml);
@@ -420,6 +444,7 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private createNewModel() {
+    this.keyManuallyEdited = false;
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" targetNamespace="http://bpmn.io/schema/bpmn" id="Definitions_1">
   <bpmn:process id="Process_1" name="New Process" isExecutable="true">
@@ -435,6 +460,33 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
 </bpmn:definitions>`;
 
     this.importDiagram(xml);
+  }
+
+    onNameChange() {
+    if (!this.keyManuallyEdited) {
+      this.modelKey = this.generateKeyFromName(this.modelName);
+    }
+  }
+
+  onKeyInput(event?: Event) {
+    const inputValue =
+      (event?.target as HTMLInputElement | undefined)?.value ?? this.modelKey;
+    this.modelKey = inputValue.trimStart();
+    this.keyManuallyEdited = this.modelKey.length > 0;
+  }
+
+  private generateKeyFromName(name: string): string {
+    if (!name) {
+      return '';
+    }
+
+    const normalized = name
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return normalized.substring(0, 64);
   }
 
   triggerFileInput() {
@@ -470,6 +522,12 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async saveModel() {
+    if (!this.modelKey && this.modelName) {
+      this.modelKey = this.generateKeyFromName(this.modelName);
+    }
+
+    this.modelKey = this.modelKey.trim();
+
     if (!this.modelName || !this.modelKey) {
       this.messageService.add({
         severity: 'warn',
@@ -669,6 +727,17 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   deployModel() {
+       this.modelKey = this.modelKey.trim();
+
+    if (!this.modelKey) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Warning',
+        detail: 'Model key is required before deployment. Save the model first.'
+      });
+      return;
+    }
+
     if (!this.isEditMode || !this.modelId) {
       this.messageService.add({
         severity: 'warn',
@@ -692,7 +761,7 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
             detail: `Model deployed successfully. Deployment ID: ${response.deploymentId}`
           });
           this.loadModel();
-          this.router.navigate(['/dashboard/bpmn/models']);
+          this.router.navigate([this.getModelsRoute()]);
         },
         error: (err) => {
           console.error('Error deploying:', err);
@@ -711,6 +780,18 @@ export class BpmnEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   goBack() {
-    this.router.navigate(['/dashboard/bpmn/models']);
+   this.router.navigate([this.getModelsRoute()]);
+  }
+
+  private getModelsRoute(): string {
+    if (this.authService.isScrumMaster()) {
+      return '/dashboard/scrum-master/bpmn/models';
+    }
+
+    if (this.authService.isProductOwner()) {
+      return '/dashboard/product-owner/bpmn/models';
+    }
+
+    return '/dashboard/bpmn/models';
   }
 }

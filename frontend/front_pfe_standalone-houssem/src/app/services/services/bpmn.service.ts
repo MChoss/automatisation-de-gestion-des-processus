@@ -126,9 +126,9 @@ export class BpmnService extends BaseService {
   }
 
   // Get process instances for a model
-  getProcessInstances(processKey: string, context?: HttpContext): Observable<ProcessInstanceResponse[]> {
+  getProcessInstances(bpmnModelId: string, context?: HttpContext): Observable<ProcessInstanceResponse[]> {
     return this.http.get<ProcessInstanceResponse[]>(
-      `${this.rootUrl}/process/instances?processKey=${processKey}`,
+      `${this.rootUrl}/bpmn/processes/model/${bpmnModelId}`,
       { context }
     );
   }
@@ -136,8 +136,8 @@ export class BpmnService extends BaseService {
   // Start new process instance
   startProcessInstance(processKey: string, variables?: Record<string, any>, context?: HttpContext): Observable<ProcessInstanceResponse> {
     return this.http.post<ProcessInstanceResponse>(
-      `${this.rootUrl}/process/start`,
-      { processKey, variables },
+      `${this.rootUrl}/bpmn/processes/start/${processKey}`,
+      variables,
       { context }
     );
   }

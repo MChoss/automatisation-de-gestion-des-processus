@@ -11,6 +11,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { DialogModule } from 'primeng/dialog';
 import { FormsModule } from '@angular/forms';
 import { BpmnModelResponse, BpmnService } from '../../../services/services/bpmn.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-bpmn-models-list',
@@ -59,7 +60,7 @@ import { BpmnModelResponse, BpmnService } from '../../../services/services/bpmn.
             <td>
               <button pButton type="button" icon="pi pi-pencil" (click)="editModel(model)" class="p-button-info p-button-sm"></button>
               <button pButton type="button" icon="pi pi-trash" (click)="deleteModelConfirm(model)" class="p-button-danger p-button-sm"></button>
-              <button pButton type="button" icon="pi pi-play" (click)="startProcess(model)" class="p-button-success p-button-sm" [disabled]="model.status !== 'DEPLOYED'"></button>
+              <button pButton type="button" icon="pi pi-play" (click)="startProcess(model)" class="p-button-success p-button-sm" [disabled]="!canStart(model)"></button>
             </td>
           </tr>
         </ng-template>
@@ -167,8 +168,8 @@ export class BpmnModelsListComponent implements OnInit {
     private router: Router,
     private bpmnService: BpmnService,
     private messageService: MessageService,
-    private confirmationService: ConfirmationService
-  ) {}
+    private confirmationService: ConfirmationService,
+    private authService: AuthService  ) {}
 
   ngOnInit() {
     this.loadModels();
@@ -194,11 +195,11 @@ export class BpmnModelsListComponent implements OnInit {
   }
 
   createNewModel() {
-    this.router.navigate(['/dashboard/bpmn/editor']);
+    this.router.navigate([`${this.getBaseRoute()}/bpmn/editor`]);
   }
 
   editModel(model: BpmnModelResponse) {
-    this.router.navigate(['/dashboard/bpmn/editor', model.id]);
+    this.router.navigate([`${this.getBaseRoute()}/bpmn/editor`, model.id]);
   }
 
   searchModels() {
@@ -254,6 +255,20 @@ export class BpmnModelsListComponent implements OnInit {
   startProcess(model: BpmnModelResponse) {
     this.selectedModel = model;
     this.startProcessDialog = true;
+  }
+
+    canStart(model: BpmnModelResponse): boolean {
+    return ['DEPLOYED', 'ACTIVE'].includes(model.status);
+  }
+
+  private getBaseRoute(): string {
+    if (this.authService.isScrumMaster()) {
+      return '/dashboard/scrum-master';
+    }
+    if (this.authService.isProductOwner()) {
+      return '/dashboard/product-owner';
+    }
+    return '/dashboard';
   }
 
   confirmStartProcess() {
